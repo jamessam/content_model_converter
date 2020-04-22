@@ -1,10 +1,15 @@
 import datetime
 import os
+import re
 import sys
 
 import contentful_management
 import pandas as pd
 
+def clean_name(name):
+  '''This function strips special characters out of content type names. Essential for the tab creation process.'''
+  clean_name = re.sub('\W+',' ', name )
+  return clean_name
 
 def main(SPACE_ID, CF_ENV, PAT):
   cma = contentful_management.Client(PAT)
@@ -17,9 +22,10 @@ def main(SPACE_ID, CF_ENV, PAT):
 
   for content_type in content_types:
       ct = content_type.to_json()
+      name = clean_name(ct['name'])
       fields = ct['fields']
       df = pd.DataFrame(fields)
-      df.to_excel(writer,ct['name'],index=False)
+      df.to_excel(writer, name, index=False)
   writer.save()
 
 
@@ -34,7 +40,7 @@ if __name__ == '__main__':
   if len(SPACE_ID) != 12:
     raise SyntaxError("Invalid space ID.")
 
-  if len(PAT) != 70:
+  if not (PAT.startswith('CFPAT-', 0, 6)):
     raise SyntaxError("Invalid PAT.")
   
   main(SPACE_ID, CF_ENV, PAT)
